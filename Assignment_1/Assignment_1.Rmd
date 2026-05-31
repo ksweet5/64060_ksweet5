@@ -1,0 +1,59 @@
+---
+title: "Assignment 1 - Carseats Dataset Analysis"
+author: "Kiersten Sweet"
+output: html_document
+---
+
+# Introduction
+
+This assignment demonstrates importing a dataset, generating descriptive statistics, transforming variables, and creating visualizations using R.
+
+```{r}
+library(ISLR)
+
+data(Carseats)
+
+head(Carseats)
+```
+
+# Descriptive Statistics
+
+```{r}
+summary(Carseats[, c("Sales", "Price", "Income", "Advertising")])
+
+table(Carseats$ShelveLoc)
+table(Carseats$Urban)
+table(Carseats$US)
+```
+
+The summary above shows descriptive statistics for quantitative and categorical variables.
+
+# Variable Transformation
+
+```{r}
+Carseats$HighSales <- ifelse(Carseats$Sales > 8, "High", "Low")
+
+table(Carseats$HighSales)
+```
+
+A new variable called HighSales was created.
+
+# Histogram
+
+```{r}
+hist(Carseats$Sales,
+     main = "Distribution of Sales",
+     xlab = "Sales")
+```
+
+# Scatterplot
+
+```{r}
+plot(Carseats$Price,
+     Carseats$Sales,
+     main = "Price vs Sales",
+     xlab = "Price",
+     ylab = "Sales")
+```
+
+The scatterplot shows the relationship between price and sales.
