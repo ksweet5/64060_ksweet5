@@ -1,0 +1,265 @@
+---
+title: "Assignment 2: k-NN Classification"
+author: "Kiersten Sweet"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  word_document: default
+---
+```{r}
+library(class)
+```
+```{r}
+library(class)
+
+bank <- read.csv("UniversalBank.csv")
+```
+```{r}
+bank <- read.csv("UniversalBank.csv")
+
+head(bank)
+```
+```{r}
+names(bank)
+```
+```{r}
+# Create dummy variables for Education
+bank$Education_1 <- ifelse(bank$Education == 1, 1, 0)
+bank$Education_2 <- ifelse(bank$Education == 2, 1, 0)
+bank$Education_3 <- ifelse(bank$Education == 3, 1, 0)
+
+# Remove ID, ZIP Code, and original Education column
+bank_model <- bank[, !(names(bank) %in% c("ID", "ZIP.Code", "Education"))]
+
+# Check the cleaned dataset
+names(bank_model)
+head(bank_model)
+```
+```{r}
+set.seed(123)
+
+n <- nrow(bank_model)
+
+train_rows <- sample(1:n, size = 0.60 * n)
+
+train_data <- bank_model[train_rows, ]
+valid_data <- bank_model[-train_rows, ]
+
+dim(train_data)
+dim(valid_data)
+```
+```{r}
+train_x <- train_data[, names(train_data) != "Personal.Loan"]
+valid_x <- valid_data[, names(valid_data) != "Personal.Loan"]
+
+train_y <- train_data$Personal.Loan
+valid_y <- valid_data$Personal.Loan
+```
+```{r}
+train_mean <- apply(train_x, 2, mean)
+train_sd <- apply(train_x, 2, sd)
+
+train_x_scaled <- scale(
+  train_x,
+  center = train_mean,
+  scale = train_sd
+)
+
+valid_x_scaled <- scale(
+  valid_x,
+  center = train_mean,
+  scale = train_sd
+)
+```
+```{r}
+new_customer <- data.frame(
+  Age = 40,
+  Experience = 10,
+  Income = 84,
+  Family = 2,
+  CCAvg = 2,
+  Mortgage = 0,
+  Securities.Account = 0,
+  CD.Account = 0,
+  Online = 1,
+  CreditCard = 1,
+  Education_1 = 0,
+  Education_2 = 1,
+  Education_3 = 0
+)
+
+new_customer
+```
+```{r}
+new_customer <- new_customer[, colnames(train_x)]
+```
+```{r}
+new_customer_scaled <- scale(
+  new_customer,
+  center = train_mean,
+  scale = train_sd
+)
+```
+```{r}
+prediction_k1 <- knn(
+  train = train_x_scaled,
+  test = new_customer_scaled,
+  cl = train_y,
+  k = 1
+)
+
+prediction_k1
+```
+
+Question Answer 1
+
+Using k = 1, the customer is classified as not accepting the loan offer.
+
+```{r}
+accuracy <- numeric(25)
+
+for (k in 1:25) {
+
+  pred <- knn(
+    train = train_x_scaled,
+    test = valid_x_scaled,
+    cl = train_y,
+    k = k
+  )
+
+  accuracy[k] <- mean(pred == valid_y)
+}
+
+accuracy
+```
+```{r}
+best_k <- which.max(accuracy)
+
+best_k
+```
+
+Question 2 Answer
+
+The best value of k is 1 because it produced the highest classification accuracy (96.35%) on the validation dataset. Although larger values of k can reduce overfitting, k = 1 provided the best predictive performance for this dataset.
+
+```{r}
+valid_pred <- knn(
+  train = train_x_scaled,
+  test = valid_x_scaled,
+  cl = train_y,
+  k = best_k
+)
+
+conf_matrix <- table(
+  Predicted = valid_pred,
+  Actual = valid_y
+)
+
+conf_matrix
+```
+
+Question 3 Answer
+
+The confusion matrix for the validation dataset is shown above. It summarizes the number of correct and incorrect classifications made by the k-NN model using the best value of k.
+
+```{r}
+prediction_best_k <- knn(
+  train = train_x_scaled,
+  test = new_customer_scaled,
+  cl = train_y,
+  k = best_k
+)
+
+prediction_best_k
+```
+
+Question 4 Answer
+
+Using the best value of k (k = 1), the customer is classified as not accepting the loan offer because the predicted class is 0.
+
+```{r}
+set.seed(123)
+
+n <- nrow(bank_model)
+
+# 50% training
+train_rows2 <- sample(1:n, size = 0.50 * n)
+
+train2 <- bank_model[train_rows2, ]
+remaining <- bank_model[-train_rows2, ]
+
+# Split remaining observations
+valid_rows2 <- sample(
+  1:nrow(remaining),
+  size = 0.60 * nrow(remaining)
+)
+
+valid2 <- remaining[valid_rows2, ]
+test2 <- remaining[-valid_rows2, ]
+
+dim(train2)
+dim(valid2)
+dim(test2)
+```
+
+```{r}
+train2_x <- train2[, names(train2) != "Personal.Loan"]
+valid2_x <- valid2[, names(valid2) != "Personal.Loan"]
+test2_x  <- test2[, names(test2) != "Personal.Loan"]
+
+train2_y <- train2$Personal.Loan
+valid2_y <- valid2$Personal.Loan
+test2_y  <- test2$Personal.Loan
+
+train2_mean <- apply(train2_x, 2, mean)
+train2_sd <- apply(train2_x, 2, sd)
+
+train2_x_scaled <- scale(train2_x,
+                         center = train2_mean,
+                         scale = train2_sd)
+
+valid2_x_scaled <- scale(valid2_x,
+                         center = train2_mean,
+                         scale = train2_sd)
+
+test2_x_scaled <- scale(test2_x,
+                        center = train2_mean,
+                        scale = train2_sd)
+```
+```{r}
+train_pred <- knn(
+  train = train2_x_scaled,
+  test = train2_x_scaled,
+  cl = train2_y,
+  k = best_k
+)
+
+table(Predicted = train_pred,
+      Actual = train2_y)
+```
+```{r}
+valid_pred2 <- knn(
+  train = train2_x_scaled,
+  test = valid2_x_scaled,
+  cl = train2_y,
+  k = best_k
+)
+
+table(Predicted = valid_pred2,
+      Actual = valid2_y)
+```
+```{r}
+test_pred <- knn(
+  train = train2_x_scaled,
+  test = test2_x_scaled,
+  cl = train2_y,
+  k = best_k
+)
+
+table(Predicted = test_pred,
+      Actual = test2_y)
+```
+
+Question 5 Answer
+
+The confusion matrices for the training, validation, and test datasets are shown above. The training dataset achieved perfect classification because k = 1 compares observations to the same data used to build the model. The validation and test datasets provide a more realistic assessment of model performance because they contain observations that were not used during training. The validation matrix shows 1,436 correct predictions and 64 incorrect predictions, while the test matrix shows 964 correct predictions and 36 incorrect predictions. Although the training accuracy is higher, the validation and test results indicate that the model generalizes well to new customers. The differences between the confusion matrices occur because each dataset contains different observations and because prediction performance typically decreases slightly when applied to unseen data.
